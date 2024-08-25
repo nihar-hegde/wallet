@@ -1,6 +1,10 @@
 "use client";
 
+import { CreatePasswordPage } from "@/components/Onboarding/Pages/CreatePasswordPage";
+import { RecoveryPhraseWarning } from "@/components/Onboarding/Pages/RecoverPhraseWarning";
+import { SecretRecoveryPage } from "@/components/Onboarding/Pages/SecretRecoverPage";
 import { SelectBlockChainPage } from "@/components/Onboarding/Pages/SelectBlockChainPage";
+import { SuccessPage } from "@/components/Onboarding/Pages/SuccessPage";
 import { Welcome } from "@/components/Onboarding/Pages/Welcome";
 import ProgressIndicator from "@/components/Onboarding/ProgressIndicator";
 import { useRouter } from "next/navigation";
@@ -25,13 +29,13 @@ const OnboardingPage = ({ params }: { params: { step: string } }) => {
       case 2:
         return <SelectBlockChainPage />;
       case 3:
-        return <div>Recovery phrase warning</div>;
+        return <RecoveryPhraseWarning />;
       case 4:
-        return <div>Dispaly the generated recover phrase</div>;
+        return <SecretRecoveryPage />;
       case 5:
-        return <div>Crate new password</div>;
+        return <CreatePasswordPage />;
       case 6:
-        return <div>Finish button to dashboard</div>;
+        return <SuccessPage />;
     }
   };
 
