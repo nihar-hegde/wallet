@@ -1,8 +1,17 @@
-import { CardWrapper } from "@/components/Shared/CardWrapper";
+"use client";
+import { buttonVariants } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { LockKeyhole, OctagonAlert } from "lucide-react";
-import React from "react";
+import Link from "next/link";
+import React, { useState } from "react";
 
 export const RecoveryPhraseWarning = () => {
+  const [checked, setChecked] = useState(false);
+
+  const handleCheckBoxClick = (checked: boolean) => {
+    setChecked(!checked);
+  };
+
   return (
     <div className="flex items-center justify-center flex-col  gap-8">
       <div className="flex flex-col gap-4 items-center justify-center">
@@ -31,6 +40,28 @@ export const RecoveryPhraseWarning = () => {
             Write it down, store it in a safe place, and{" "}
             <span className="font-bold">NEVER</span> share it win anyone.
           </p>
+        </div>
+        <div>
+          <div className="flex items-center space-x-2 max-w-xl mt-8">
+            <Checkbox
+              id="terms"
+              checked={checked}
+              onCheckedChange={handleCheckBoxClick}
+            />
+            <label
+              htmlFor="terms"
+              className="text-md font-bold    peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              I understand that I am responsivle for saving my secret recovery
+              phrase, and that it is the only way to recover my wallet.
+            </label>
+          </div>
+          <Link
+            href={"/onboarding/4"}
+            className={`${buttonVariants({ variant: "default" })}`}
+          >
+            Continue
+          </Link>
         </div>
       </div>
     </div>
