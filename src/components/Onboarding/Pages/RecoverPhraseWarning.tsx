@@ -1,15 +1,21 @@
 "use client";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { LockKeyhole, OctagonAlert } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
 export const RecoveryPhraseWarning = () => {
   const [checked, setChecked] = useState(false);
+  const router = useRouter();
+
+  const handleClick = () => {
+    router.push("/onboarding/4");
+  };
 
   const handleCheckBoxClick = (checked: boolean) => {
-    setChecked(!checked);
+    setChecked(checked);
   };
 
   return (
@@ -41,7 +47,7 @@ export const RecoveryPhraseWarning = () => {
             <span className="font-bold">NEVER</span> share it win anyone.
           </p>
         </div>
-        <div>
+        <div className="flex flex-col items-center gap-4">
           <div className="flex items-center space-x-2 max-w-xl mt-8">
             <Checkbox
               id="terms"
@@ -56,12 +62,13 @@ export const RecoveryPhraseWarning = () => {
               phrase, and that it is the only way to recover my wallet.
             </label>
           </div>
-          <Link
-            href={"/onboarding/4"}
-            className={`${buttonVariants({ variant: "default" })}`}
+          <Button
+            onClick={handleClick}
+            disabled={!checked}
+            className="w-64 rounded-xl "
           >
             Continue
-          </Link>
+          </Button>
         </div>
       </div>
     </div>
