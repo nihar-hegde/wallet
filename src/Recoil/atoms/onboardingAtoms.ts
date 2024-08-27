@@ -9,3 +9,8 @@ export const secretRecoveryPhrase = atom({
   key: "SecretRecoveryPhrase",
   default: "",
 });
+
+export const passwordHash = atom({
+  key: "PasswordHash",
+  default: "",
+});
