@@ -10,7 +10,7 @@ export default function ProgressIndicator({
   totalSteps,
 }: ProgressIndicatorProps) {
   return (
-    <div className="flex justify-center space-x-6 mt-8">
+    <div className="flex justify-center space-x-6 mt-8 mb-8">
       {[...Array(totalSteps)].map((_, index) => (
         <div
           key={index}

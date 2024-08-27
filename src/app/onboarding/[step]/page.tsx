@@ -43,7 +43,6 @@ const OnboardingPage = ({ params }: { params: { step: string } }) => {
     if (currentStep < steps.length - 1) {
       router.push(`/onboarding/${currentStep + 2}`);
     } else {
-      // Finish onboarding
       router.push("/dashboard");
     }
   };
