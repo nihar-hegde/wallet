@@ -47,11 +47,11 @@ const OnboardingPage = ({ params }: { params: { step: string } }) => {
     }
   };
   return (
-    <div>
-      <div className="flex items-center justify-center p-20">
+    <div className="h-screen flex items-center justify-center flex-col">
+      <div className=" flex items-center justify-center w-full h-full pt-8 ">
         {renderStep()}
       </div>
-      <div>
+      <div className=" w-full p-8">
         <ProgressIndicator
           currentStep={currentStep}
           totalSteps={steps.length}
