@@ -3,6 +3,7 @@ import { generateRecoveryPhrase } from "@/lib/solana-utils";
 import { secretRecoveryPhrase } from "@/Recoil/atoms/onboardingAtoms";
 import { useState } from "react";
 import { useSetRecoilState } from "recoil";
+import { Separator } from "@/components/ui/separator";
 
 export const SecretRecoveryPage = () => {
   const [phrase, setPhrase] = useState("");
@@ -19,7 +20,7 @@ export const SecretRecoveryPage = () => {
     try {
       await navigator.clipboard.writeText(phrase);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000); // Reset copied state after 2 seconds
+      setTimeout(() => setIsCopied(false), 3000); // Reset copied state after 2 seconds
     } catch (err) {
       console.error("Failed to copy text: ", err);
     }
@@ -42,11 +43,14 @@ export const SecretRecoveryPage = () => {
           onClick={handleGeneratePhrase}
           className="font-bold py-2 px-4 rounded"
         >
-          Generate Recovery Phrase
+          Click here to Generate Recovery Phrase
         </Button>
       ) : (
-        <div>
-          <div className="grid grid-cols-3 gap-4 bg-neutral-900 p-6 rounded-md">
+        <div
+          className="bg-neutral-900 p-6 rounded-xl flex items-center gap-6 flex-col cursor-pointer "
+          onClick={handleCopyToClipboard}
+        >
+          <div className="grid grid-cols-3 gap-4 w-full">
             {phrase.split(" ").map((item, index) => (
               <div key={index} className="p-4 bg-neutral-950 rounded-xl">
                 <p>
@@ -55,13 +59,12 @@ export const SecretRecoveryPage = () => {
               </div>
             ))}
           </div>
-          <div className="mt-4 flex justify-center">
-            <Button
-              onClick={handleCopyToClipboard}
-              className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-            >
-              {isCopied ? "Copied!" : "Copy to Clipboard"}
-            </Button>
+          <Separator />
+
+          <div>
+            <p>
+              {isCopied ? "Copied!" : "Click anywhere on this card to copy."}
+            </p>
           </div>
         </div>
       )}
