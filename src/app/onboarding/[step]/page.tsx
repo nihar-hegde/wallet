@@ -12,10 +12,17 @@ import React from "react";
 
 const steps = [
   { title: "Welcome", content: "Welcome to our app!" },
-  { title: "Create Username", content: "Please choose a username." },
-  { title: "Additional Info", content: "Tell us more about yourself." },
-  { title: "Preferences", content: "Set your preferences." },
-  { title: "Finish", content: "You're all set!" },
+  { title: "Choose Block chain", content: "Please choose a blockchain." },
+  {
+    title: "Recovery Warning page",
+    content: "Warning message for the recovery page.",
+  },
+  {
+    title: "Recovery Phrase",
+    content: "Generate and save your recovery phrase.",
+  },
+  { title: "Create Password", content: "Generate a local password" },
+  { title: "Success", content: "You're all set!" },
 ];
 
 const OnboardingPage = ({ params }: { params: { step: string } }) => {

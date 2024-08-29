@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { generateRecoveryPhrase } from "@/lib/solana-utils";
 import {
   secretRecoveryPhrase,
   selectedBlockChain,
@@ -9,6 +8,7 @@ import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
+import { generateRecoveryPhrase } from "@/lib/solana-utils/solana-utils";
 
 export const SecretRecoveryPage = () => {
   const [phrase, setPhrase] = useState("");

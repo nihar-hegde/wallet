@@ -1,17 +1,22 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { passwordHash } from "@/Recoil/atoms/onboardingAtoms";
+import {
+  passwordHash,
+  secretRecoveryPhrase,
+} from "@/Recoil/atoms/onboardingAtoms";
 import React, { useState } from "react";
 import { useSetRecoilState } from "recoil";
+import bcryptjs from "bcryptjs";
 
 export const CreatePasswordPage = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const setPasswordHash = useSetRecoilState(passwordHash);
+  const setRecoveryPhrase = useSetRecoilState(secretRecoveryPhrase);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (password !== confirmPassword) {
@@ -22,6 +27,18 @@ export const CreatePasswordPage = () => {
       setError("Password must be at least 8 charecters long!");
       return;
     }
+
+    try {
+      const hash = await bcryptjs.hash(password, 10);
+      setPasswordHash(hash);
+    } catch (error) {
+      setError(
+        "An error occurred while setting up your wallet. Please try again.",
+      );
+      console.log(error);
+    }
+
+    console.log(password);
   };
 
   return (
