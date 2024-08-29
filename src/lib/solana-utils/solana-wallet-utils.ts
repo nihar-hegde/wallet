@@ -1,86 +1,139 @@
 import { Keypair } from "@solana/web3.js";
 import { cryptoUtils } from "./encrypt-decrypt-utils";
 import { browserStorage } from "./storage-utils";
-import bip39 from "bip39";
+import * as bip39 from "bip39";
 import { derivePath } from "ed25519-hd-key";
+import { generateRecoveryPhrase } from "./solana-utils";
+import { passwordManager } from "./password-manager-utils";
 
 export const walletUtils = {
-  async createWallet(password: string, recoveryPhrase: string) {
+  async createWallet(password: string) {
+    const recoveryPhrase = generateRecoveryPhrase();
     const encryptedPhrase = await cryptoUtils.encrypt(recoveryPhrase, password);
     await browserStorage.set("encryptedPhrase", encryptedPhrase);
+    await passwordManager.setPassword(password);
 
     const firstAccount = await this.createAccount(recoveryPhrase, 0, password);
     await browserStorage.set("accounts", JSON.stringify([firstAccount]));
   },
 
-  async createAccount(mnemonic: string, index: number, password: string) {
-    const seed = await bip39.mnemonicToSeed(mnemonic);
-    const derivationPath = `m/44'/501'/${index}'/0'`;
-    const keyPair = Keypair.fromSeed(
-      derivePath(derivationPath, seed.toString("hex")).key
-    );
-
-    const encryptedPrivateKey = await cryptoUtils.encrypt(
-      Buffer.from(keyPair.secretKey).toString("hex"),
-      password
-    );
-
-    return {
-      publicKey: keyPair.publicKey.toBase58(),
-      encryptedPrivateKey,
-    };
+  async walletExists(): Promise<boolean> {
+    const encryptedPhrase = await browserStorage.get("encryptedPhrase");
+    return !!encryptedPhrase;
   },
 
   async addAccount(password: string) {
-    const encryptedPhrase = await browserStorage.get("encryptedPhrase");
-    if (!encryptedPhrase) throw new Error("No wallet found!");
+    console.log("Starting addAccount process");
+    try {
+      const encryptedPhrase = await browserStorage.get("encryptedPhrase");
+      console.log("Retrieved encryptedPhrase:", !!encryptedPhrase);
 
-    const recoveryPhrase = await cryptoUtils.decrypt(encryptedPhrase, password);
+      if (!encryptedPhrase) {
+        throw new Error("No wallet found!");
+      }
 
-    const existingAccounts = (await browserStorage.get("accounts")) || "[]";
+      console.log("Decrypting recovery phrase");
+      const recoveryPhrase = await cryptoUtils.decrypt(
+        encryptedPhrase,
+        password
+      );
+      console.log("Recovery phrase decrypted successfully");
 
-    const accounts = JSON.parse(existingAccounts);
+      console.log("Retrieving existing accounts");
+      const existingAccounts = JSON.parse(
+        (await browserStorage.get("accounts")) || "[]"
+      );
+      console.log("Number of existing accounts:", existingAccounts.length);
 
-    const newAccount = await this.createAccount(
-      recoveryPhrase,
-      accounts.length(),
-      password
-    );
+      console.log("Creating new account");
+      const newAccount = await this.createAccount(
+        recoveryPhrase,
+        existingAccounts.length,
+        password
+      );
+      console.log("New account created:", newAccount.publicKey);
 
-    accounts.push(newAccount);
+      existingAccounts.push(newAccount);
+      console.log("Storing updated accounts");
+      await browserStorage.set("accounts", JSON.stringify(existingAccounts));
+      console.log("Accounts stored successfully");
 
-    await browserStorage.set("accounts", JSON.stringify(accounts));
+      return newAccount.publicKey;
+    } catch (error) {
+      console.error("Error in addAccount:", error);
+      throw error;
+    }
+  },
 
-    return newAccount.publicKey;
+  async createAccount(mnemonic: string, index: number, password: string) {
+    console.log("Starting createAccount process");
+    try {
+      const seed = await bip39.mnemonicToSeed(mnemonic);
+      console.log("Seed generated");
+
+      const derivationPath = `m/44'/501'/${index}'/0'`;
+      console.log("Using derivation path:", derivationPath);
+
+      const keypair = Keypair.fromSeed(
+        derivePath(derivationPath, seed.toString("hex")).key
+      );
+      console.log("Keypair generated");
+
+      const encryptedPrivateKey = await cryptoUtils.encrypt(
+        Buffer.from(keypair.secretKey).toString("hex"),
+        password
+      );
+      console.log("Private key encrypted");
+
+      return {
+        publicKey: keypair.publicKey.toBase58(),
+        encryptedPrivateKey,
+        index,
+        name: `Account ${index + 1}`,
+      };
+    } catch (error) {
+      console.error("Error in createAccount:", error);
+      throw error;
+    }
   },
 
   async getAccounts() {
     const accounts = JSON.parse((await browserStorage.get("accounts")) || "[]");
-    return accounts.map((accounts: any) => accounts.publicKey);
+    return accounts;
   },
 
   async getPrivateKey(publicKey: string, password: string) {
-    const accounts = JSON.parse((await browserStorage.get("accounts")) || "[]");
+    const accounts = await this.getAccounts();
     const account = accounts.find((acc: any) => acc.publicKey === publicKey);
-
     if (!account) throw new Error("Account not found");
 
-    const decryptedPrivateKey = await cryptoUtils.decrypt(
-      account.encryptedPrivateKey,
-      password
-    );
-    return decryptedPrivateKey;
+    return cryptoUtils.decrypt(account.encryptedPrivateKey, password);
   },
 
   async verifyPassword(password: string) {
     const encryptedPhrase = await browserStorage.get("encryptedPhrase");
-    if (!encryptedPhrase) throw new Error("No wallet found");
+    console.log(
+      "Verifying password, encrypted phrase exists:",
+      !!encryptedPhrase
+    );
+
+    if (!encryptedPhrase) return false;
 
     try {
       await cryptoUtils.decrypt(encryptedPhrase, password);
+      console.log("Password verification successful");
       return true;
-    } catch {
+    } catch (error) {
+      console.error("Password verification failed:", error);
       return false;
     }
+  },
+
+  async verifyAndDecryptMnemonic(password: string): Promise<string> {
+    const isValid = await this.verifyPassword(password);
+    if (!isValid) throw new Error("Invalid password");
+
+    const encryptedMnemonic = await browserStorage.get("encryptedPhrase");
+    return cryptoUtils.decrypt(encryptedMnemonic, password);
   },
 };

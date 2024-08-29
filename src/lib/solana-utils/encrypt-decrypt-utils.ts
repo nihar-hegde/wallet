@@ -6,51 +6,31 @@ export const cryptoUtils = {
       enc.encode(password),
       { name: "PBKDF2" },
       false,
-      ["deriveBits", "deriveKey"],
-    );
-    console.log("DerieKey: ", keyMaterial);
-
-    console.log(
-      "RETURN VALUE:  ",
-      window.crypto.subtle.deriveKey(
-        {
-          name: "PBKDF2",
-          salt: salt,
-          iterations: 100000,
-          hash: "SHA-256",
-        },
-
-        keyMaterial,
-        { name: "AES-GCM", length: 256 },
-        true,
-        ["encrypt", "decrypt"],
-      ),
+      ["deriveBits", "deriveKey"]
     );
 
-    return window.crypto.subtle.deriveKey(
+    const derivedKey = await window.crypto.subtle.deriveKey(
       {
         name: "PBKDF2",
         salt: salt,
         iterations: 100000,
         hash: "SHA-256",
       },
-
       keyMaterial,
       { name: "AES-GCM", length: 256 },
       true,
-      ["encrypt", "decrypt"],
+      ["encrypt", "decrypt"]
     );
+
+    console.log("Derived key:", derivedKey);
+    return derivedKey;
   },
+
   async encrypt(data: string, password: string): Promise<string> {
-    const salt = window.crypto.getRandomValues(new Uint8Array(10));
+    const salt = window.crypto.getRandomValues(new Uint8Array(16)); // Changed to 16 bytes
     const key = await this.deriveKey(password, salt);
     const enc = new TextEncoder();
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    console.log("ENCRYPT FUNCTION CONSTS", {
-      salt,
-      key,
-      iv,
-    });
 
     const encrypted = await window.crypto.subtle.encrypt(
       {
@@ -58,60 +38,66 @@ export const cryptoUtils = {
         iv: iv,
       },
       key,
-      enc.encode(data),
+      enc.encode(data)
     );
-    console.log("ENCRYPTED: ", encrypted);
 
     const encryptedData = new Uint8Array(encrypted);
-
-    console.log("ENCRYPTED Data: ", encryptedData);
-
     const result = new Uint8Array(
-      salt.length + iv.length + encryptedData.length,
+      salt.length + iv.length + encryptedData.length
     );
-
-    console.log("ENCRYPTED RESULT: ", result);
-
     result.set(salt, 0);
     result.set(iv, salt.length);
     result.set(encryptedData, salt.length + iv.length);
 
-    console.log(
-      "ENCRYPTED RESULT after adding : ",
-      btoa(String.fromCharCode.apply(null, Array.from(result))),
-    );
+    console.log("Encryption details:", {
+      saltLength: salt.length,
+      ivLength: iv.length,
+      encryptedDataLength: encryptedData.length,
+      totalLength: result.length,
+    });
 
     return btoa(String.fromCharCode.apply(null, Array.from(result)));
   },
 
   async decrypt(encryptedData: string, password: string): Promise<string> {
-    const data = Uint8Array.from(atob(encryptedData), (c) => c.charCodeAt(0));
-    const salt = data.slice(0.16);
-    const iv = data.slice(16, 16 + 12);
-    const content = data.slice(16 + 12);
+    try {
+      const data = Uint8Array.from(atob(encryptedData), (c) => c.charCodeAt(0));
+      console.log("Decryption input length:", data.length);
 
-    const key = await this.deriveKey(password, salt);
+      const salt = data.slice(0, 16);
+      const iv = data.slice(16, 28);
+      const content = data.slice(28);
 
-    console.log("DECRYPT CONSTS: ", {
-      data,
-      salt,
-      iv,
-      content,
-      key,
-    });
+      console.log("Decryption details:", {
+        saltLength: salt.length,
+        ivLength: iv.length,
+        contentLength: content.length,
+      });
 
-    const decrypted = await window.crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: iv,
-      },
-      key,
-      content,
-    );
-    console.log("DECRYPTED: ", decrypted);
-    const dec = new TextDecoder();
-    console.log("RETURN VASLUE FOR DECRYPT: ", dec.decode(decrypted));
+      const key = await this.deriveKey(password, salt);
 
-    return dec.decode(decrypted);
+      const decrypted = await window.crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: iv,
+        },
+        key,
+        content
+      );
+
+      const dec = new TextDecoder();
+      return dec.decode(decrypted);
+    } catch (error: any) {
+      console.error("Detailed decryption error:", error);
+      throw new Error(`Failed to decrypt data: ${error.message}`);
+    }
+  },
+
+  compareArrays(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
   },
 };

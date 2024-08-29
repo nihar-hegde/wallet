@@ -2,19 +2,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  passwordHash,
+  rawPassword,
   secretRecoveryPhrase,
 } from "@/Recoil/atoms/onboardingAtoms";
 import React, { useState } from "react";
-import { useSetRecoilState } from "recoil";
-import bcryptjs from "bcryptjs";
+import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useRouter } from "next/navigation";
+import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
 
 export const CreatePasswordPage = () => {
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const setPasswordHash = useSetRecoilState(passwordHash);
-  const setRecoveryPhrase = useSetRecoilState(secretRecoveryPhrase);
+  const setRawPassword = useSetRecoilState(rawPassword);
+  const recoveryPhrase = useRecoilValue(secretRecoveryPhrase);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -29,16 +32,17 @@ export const CreatePasswordPage = () => {
     }
 
     try {
-      const hash = await bcryptjs.hash(password, 10);
-      setPasswordHash(hash);
+      setLoading(true);
+      await walletUtils.createWallet(password);
+      router.push("/onboarding/6");
     } catch (error) {
       setError(
-        "An error occurred while setting up your wallet. Please try again.",
+        "An error occurred while setting up your wallet. Please try again."
       );
-      console.log(error);
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-
-    console.log(password);
   };
 
   return (
