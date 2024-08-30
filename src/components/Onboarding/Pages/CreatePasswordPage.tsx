@@ -6,7 +6,7 @@ import {
   secretRecoveryPhrase,
 } from "@/Recoil/atoms/onboardingAtoms";
 import React, { useState } from "react";
-import { useRecoilValue, useSetRecoilState } from "recoil";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import { useRouter } from "next/navigation";
 import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
 
@@ -16,7 +16,8 @@ export const CreatePasswordPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const setRawPassword = useSetRecoilState(rawPassword);
-  const recoveryPhrase = useRecoilValue(secretRecoveryPhrase);
+  const [recoveryPhrase, setRecoveryPhrase] =
+    useRecoilState(secretRecoveryPhrase);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -33,7 +34,9 @@ export const CreatePasswordPage = () => {
 
     try {
       setLoading(true);
-      await walletUtils.createWallet(password);
+      await walletUtils.createWallet(password, recoveryPhrase);
+      setRecoveryPhrase("");
+      setRawPassword("");
       router.push("/onboarding/6");
     } catch (error) {
       setError(

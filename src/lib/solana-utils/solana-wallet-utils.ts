@@ -7,8 +7,7 @@ import { generateRecoveryPhrase } from "./solana-utils";
 import { passwordManager } from "./password-manager-utils";
 
 export const walletUtils = {
-  async createWallet(password: string) {
-    const recoveryPhrase = generateRecoveryPhrase();
+  async createWallet(password: string, recoveryPhrase: string) {
     const encryptedPhrase = await cryptoUtils.encrypt(recoveryPhrase, password);
     await browserStorage.set("encryptedPhrase", encryptedPhrase);
     await passwordManager.setPassword(password);
