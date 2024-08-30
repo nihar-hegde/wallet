@@ -41,7 +41,7 @@ export const Dashboard = () => {
   };
 
   const handleAddAccountSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
+    e: React.FormEvent<HTMLFormElement>,
   ) => {
     e.preventDefault();
     try {
@@ -98,7 +98,13 @@ export const Dashboard = () => {
   }
 
   if (!isUnlocked) {
-    return <PasswordVerification onSuccess={handleUnlock} />;
+    return (
+      <div className="flex items-center justify-center p-14 w-full h-screen">
+        <div className="max-w-96 bg-neutral-800 p-10 rounded-md">
+          <PasswordVerification onSuccess={handleUnlock} />
+        </div>
+      </div>
+    );
   }
 
   return (

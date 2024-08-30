@@ -30,8 +30,11 @@ export const PasswordVerification: React.FC<PasswordVerificationProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
+    <form
+      onSubmit={handleSubmit}
+      className=" flex flex-col items-center gap-8 w-full"
+    >
+      <div className="flex flex-col items-center gap-4 w-full">
         <Label htmlFor="password">Enter your wallet password</Label>
         <Input
           type="password"
@@ -42,7 +45,9 @@ export const PasswordVerification: React.FC<PasswordVerificationProps> = ({
         />
       </div>
       {error && <p className="text-red-500 text-sm">{error}</p>}
-      <Button type="submit">Unlock Wallet</Button>
+      <Button type="submit" className="w-full">
+        Unlock Wallet
+      </Button>
     </form>
   );
 };
