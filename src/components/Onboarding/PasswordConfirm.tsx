@@ -1,8 +1,8 @@
-import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
 import React, { useState } from "react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
+import { passwordManager } from "@/lib/solana-utils/password-manager-utils";
 
 interface PasswordVerificationProps {
   onSuccess: (password: string) => void;
@@ -17,9 +17,9 @@ export const PasswordVerification: React.FC<PasswordVerificationProps> = ({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const isValid = await walletUtils.verifyPassword(password);
+      const isValid = await passwordManager.verifyPassword(password);
       if (isValid) {
-        onSuccess(password); // Pass the password to onSuccess
+        onSuccess(password);
       } else {
         setError("Invalid password");
       }

@@ -1,3 +1,4 @@
+"use client";
 // components/Dashboard.tsx
 import React, { useState, useEffect } from "react";
 import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";

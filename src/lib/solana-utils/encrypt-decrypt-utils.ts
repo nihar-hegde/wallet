@@ -27,7 +27,7 @@ export const cryptoUtils = {
   },
 
   async encrypt(data: string, password: string): Promise<string> {
-    const salt = window.crypto.getRandomValues(new Uint8Array(16)); // Changed to 16 bytes
+    const salt = window.crypto.getRandomValues(new Uint8Array(16));
     const key = await this.deriveKey(password, salt);
     const enc = new TextEncoder();
     const iv = window.crypto.getRandomValues(new Uint8Array(12));

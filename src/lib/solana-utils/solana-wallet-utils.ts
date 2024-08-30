@@ -3,7 +3,6 @@ import { cryptoUtils } from "./encrypt-decrypt-utils";
 import { browserStorage } from "./storage-utils";
 import * as bip39 from "bip39";
 import { derivePath } from "ed25519-hd-key";
-import { generateRecoveryPhrase } from "./solana-utils";
 import { passwordManager } from "./password-manager-utils";
 
 export const walletUtils = {

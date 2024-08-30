@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import { useRouter } from "next/navigation";
 import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
+import { Loader } from "lucide-react";
 
 export const CreatePasswordPage = () => {
   const [password, setPassword] = useState("");
@@ -86,7 +87,7 @@ export const CreatePasswordPage = () => {
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <Button type="submit" className="w-96">
-            Create Password
+            {loading ? <Loader className="animate-spin" /> : "Create Password"}
           </Button>
         </form>
       </div>
