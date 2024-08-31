@@ -33,6 +33,11 @@ export const Dashboard = () => {
   const loadAccounts = async () => {
     const accountList = await walletUtils.getAccounts();
     setAccounts(accountList);
+
+    // Select the first account by default if there are accounts and none is selected
+    if (accountList.length > 0 && !selectedAccount) {
+      setSelectedAccount(accountList[0].publicKey);
+    }
   };
 
   const handleSelectAccount = (publicKey: string) => {
@@ -49,7 +54,7 @@ export const Dashboard = () => {
       await loadAccounts(); // Reload the accounts to include the new one
       setIsAddAccountDialogOpen(false);
       setPassword("");
-      // Optionally, select the newly added account
+      // Select the newly added account
       setSelectedAccount(newPublicKey);
     } catch (error) {
       setError(
@@ -85,6 +90,13 @@ export const Dashboard = () => {
   const truncatePublicKey = (key: string) =>
     `${key.slice(0, 5)}...${key.slice(-5)}`;
 
+  const getSelectedAccountName = () => {
+    const selectedAccountObj = accounts.find(
+      (account) => account.publicKey === selectedAccount
+    );
+    return selectedAccountObj ? selectedAccountObj.name : "Unknown Account";
+  };
+
   return (
     <div className="flex p-2 rounded-md bg-neutral-900 text-white h-[600px] w-[800px]">
       <Sidebar
@@ -97,7 +109,10 @@ export const Dashboard = () => {
       <div className="flex-1 p-8">
         {selectedAccount ? (
           <div>
-            <h1 className="text-4xl font-bold mb-4">$0.00</h1>
+            <h1 className="text-2xl font-bold mb-4">
+              {getSelectedAccountName()}
+            </h1>
+            <h2 className="text-4xl font-bold mb-4">$0.00</h2>
             <p className="text-gray-400 mb-8">+$0.00 +0.00%</p>
             <div className="flex space-x-4 mb-8">
               <Button>
