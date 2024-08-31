@@ -1,4 +1,3 @@
-"use client";
 import React, { useState, useEffect } from "react";
 import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Copy, Send, RefreshCw, DollarSign } from "lucide-react";
+import { Send, RefreshCw, DollarSign } from "lucide-react";
+import { Sidebar } from "./Sidebar";
+import { CopyButton } from "./CopyToClipboard";
 
 export const Dashboard = () => {
   const [accounts, setAccounts] = useState<
@@ -18,10 +19,12 @@ export const Dashboard = () => {
   >([]);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [isPrivateKeyDialogOpen, setIsPrivateKeyDialogOpen] = useState(false);
+  const [isAddAccountDialogOpen, setIsAddAccountDialogOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [privateKey, setPrivateKey] = useState("");
   const [error, setError] = useState("");
   const [isDecrypting, setIsDecrypting] = useState(false);
+  const [isAddingAccount, setIsAddingAccount] = useState(false);
 
   useEffect(() => {
     loadAccounts();
@@ -36,6 +39,25 @@ export const Dashboard = () => {
     setSelectedAccount(publicKey);
     setPrivateKey("");
     setError("");
+  };
+
+  const handleAddAccount = async () => {
+    setIsAddingAccount(true);
+    setError("");
+    try {
+      const newPublicKey = await walletUtils.addAccount(password);
+      await loadAccounts(); // Reload the accounts to include the new one
+      setIsAddAccountDialogOpen(false);
+      setPassword("");
+      // Optionally, select the newly added account
+      setSelectedAccount(newPublicKey);
+    } catch (error) {
+      setError(
+        "Failed to add account. Please check your password and try again."
+      );
+    } finally {
+      setIsAddingAccount(false);
+    }
   };
 
   const handleShowPrivateKey = async () => {
@@ -60,42 +82,18 @@ export const Dashboard = () => {
     setError("");
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
   const truncatePublicKey = (key: string) =>
     `${key.slice(0, 5)}...${key.slice(-5)}`;
 
   return (
-    <div className="flex h-screen bg-neutral-900 text-white">
-      {/* Sidebar */}
-      <div className="w-64 bg-neutral-800 p-4">
-        <h2 className="text-xl font-bold mb-4">Accounts</h2>
-        <ul className="space-y-2">
-          {accounts.map((account) => (
-            <li key={account.publicKey}>
-              <Button
-                variant="ghost"
-                className="w-full justify-start text-left"
-                onClick={() => handleSelectAccount(account.publicKey)}
-              >
-                <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center mr-2">
-                  {account.name.charAt(0).toUpperCase()}
-                </div>
-                {account.name}
-              </Button>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-auto">
-          <Button variant="outline" className="w-full mt-4">
-            <span className="mr-2">+</span> Add Account
-          </Button>
-        </div>
-      </div>
+    <div className="flex p-2 rounded-md bg-neutral-900 text-white h-[600px] w-[800px]">
+      <Sidebar
+        accounts={accounts}
+        onSelectAccount={handleSelectAccount}
+        onAddAccount={() => setIsAddAccountDialogOpen(true)}
+        selectedAccountPublicKey={selectedAccount}
+      />
 
-      {/* Main content */}
       <div className="flex-1 p-8">
         {selectedAccount ? (
           <div>
@@ -117,13 +115,7 @@ export const Dashboard = () => {
                 <span>Public Key:</span>
                 <div className="flex items-center">
                   <span>{truncatePublicKey(selectedAccount)}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyToClipboard(selectedAccount)}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
+                  <CopyButton text={selectedAccount} />
                 </div>
               </div>
               <Button
@@ -139,6 +131,7 @@ export const Dashboard = () => {
         )}
       </div>
 
+      {/* Private Key Dialog */}
       <Dialog
         open={isPrivateKeyDialogOpen}
         onOpenChange={(open) => {
@@ -173,19 +166,43 @@ export const Dashboard = () => {
                 <span className="font-mono break-all">
                   {truncatePublicKey(privateKey)}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => copyToClipboard(privateKey)}
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
+                <CopyButton text={privateKey} />
               </div>
               <DialogFooter>
                 <Button onClick={resetPrivateKeyState}>Close</Button>
               </DialogFooter>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Account Dialog */}
+      <Dialog
+        open={isAddAccountDialogOpen}
+        onOpenChange={(open) => {
+          setIsAddAccountDialogOpen(open);
+          if (!open) {
+            setPassword("");
+            setError("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Account</DialogTitle>
+          </DialogHeader>
+          <Input
+            type="password"
+            placeholder="Enter wallet password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {error && <p className="text-red-500 mt-2">{error}</p>}
+          <DialogFooter>
+            <Button onClick={handleAddAccount} disabled={isAddingAccount}>
+              {isAddingAccount ? "Adding Account..." : "Add Account"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
