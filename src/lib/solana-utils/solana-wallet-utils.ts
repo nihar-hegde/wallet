@@ -75,6 +75,7 @@ export const walletUtils = {
       const keypair = Keypair.fromSeed(
         derivePath(derivationPath, seed.toString("hex")).key
       );
+
       console.log("Keypair generated");
 
       const encryptedPrivateKey = await cryptoUtils.encrypt(
