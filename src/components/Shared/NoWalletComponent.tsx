@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,20 +23,9 @@ export default function NoWalletFound() {
         </p>
       </CardContent>
       <CardFooter className="flex flex-col space-y-2">
-        <Button className="w-full" variant="default">
-          Create New Account
-        </Button>
-        <Button className="w-full" variant="outline">
-          Import Existing Account
-        </Button>
-        <div className="text-center mt-4">
-          <Link
-            href="/onboarding/1"
-            className="text-sm text-primary hover:underline"
-          >
-            Go to Onboarding
-          </Link>
-        </div>
+        <Link href={"/onboarding/1"} className={buttonVariants()}>
+          Create or Import Account
+        </Link>
       </CardFooter>
     </Card>
   );
