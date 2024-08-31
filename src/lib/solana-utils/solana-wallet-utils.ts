@@ -1,9 +1,11 @@
 import { Keypair } from "@solana/web3.js";
 import { cryptoUtils } from "./encrypt-decrypt-utils";
 import { browserStorage } from "./storage-utils";
-import * as bip39 from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import { passwordManager } from "./password-manager-utils";
+import { mnemonicToSeedSync } from "bip39";
+import nacl from "tweetnacl";
+import bs58 from "bs58";
 
 export const walletUtils = {
   async createWallet(password: string, recoveryPhrase: string) {
@@ -24,37 +26,29 @@ export const walletUtils = {
     console.log("Starting addAccount process");
     try {
       const encryptedPhrase = await browserStorage.get("encryptedPhrase");
-      console.log("Retrieved encryptedPhrase:", !!encryptedPhrase);
 
       if (!encryptedPhrase) {
         throw new Error("No wallet found!");
       }
 
-      console.log("Decrypting recovery phrase");
       const recoveryPhrase = await cryptoUtils.decrypt(
         encryptedPhrase,
         password
       );
-      console.log("Recovery phrase decrypted successfully");
 
-      console.log("Retrieving existing accounts");
       const existingAccounts = JSON.parse(
         (await browserStorage.get("accounts")) || "[]"
       );
-      console.log("Number of existing accounts:", existingAccounts.length);
 
-      console.log("Creating new account");
       const newAccount = await this.createAccount(
         recoveryPhrase,
         existingAccounts.length,
         password
       );
-      console.log("New account created:", newAccount.publicKey);
 
       existingAccounts.push(newAccount);
-      console.log("Storing updated accounts");
+
       await browserStorage.set("accounts", JSON.stringify(existingAccounts));
-      console.log("Accounts stored successfully");
 
       return newAccount.publicKey;
     } catch (error) {
@@ -64,25 +58,21 @@ export const walletUtils = {
   },
 
   async createAccount(mnemonic: string, index: number, password: string) {
-    console.log("Starting createAccount process");
     try {
-      const seed = await bip39.mnemonicToSeed(mnemonic);
-      console.log("Seed generated");
+      const seed = mnemonicToSeedSync(mnemonic);
 
       const derivationPath = `m/44'/501'/${index}'/0'`;
-      console.log("Using derivation path:", derivationPath);
 
-      const keypair = Keypair.fromSeed(
-        derivePath(derivationPath, seed.toString("hex")).key
-      );
+      const derivedSeed = derivePath(derivationPath, seed.toString("hex")).key;
+      const secret = nacl.sign.keyPair.fromSeed(derivedSeed).secretKey;
+      const keypair = Keypair.fromSecretKey(secret);
 
-      console.log("Keypair generated");
+      const base58PrivateKey = bs58.encode(secret);
 
       const encryptedPrivateKey = await cryptoUtils.encrypt(
-        Buffer.from(keypair.secretKey).toString("hex"),
+        base58PrivateKey,
         password
       );
-      console.log("Private key encrypted");
 
       return {
         publicKey: keypair.publicKey.toBase58(),
