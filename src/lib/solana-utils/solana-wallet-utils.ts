@@ -166,26 +166,49 @@ export const walletUtils = {
     amount: number,
     password: string
   ) {
+    console.log("Sending SOL from:", fromPublicKey, "to:", toPublicKey);
+    console.log("Amount:", amount);
+
     const connection = getSolanaConnection();
     const fromPubkey = new PublicKey(fromPublicKey);
     const toPubkey = new PublicKey(toPublicKey);
 
-    const privateKeyHex = await this.getPrivateKey(fromPublicKey, password);
-    const privateKey = Buffer.from(privateKeyHex, "hex");
+    try {
+      const base58PrivateKey = await this.getPrivateKey(
+        fromPublicKey,
+        password
+      );
+      console.log("Private key length (Base58):", base58PrivateKey.length);
 
-    const signer = Keypair.fromSecretKey(privateKey);
+      // Decode the Base58 private key
+      const privateKeyUint8 = bs58.decode(base58PrivateKey);
 
-    const transaction = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey,
-        toPubkey,
-        lamports: amount * 1e9,
-      })
-    );
+      if (privateKeyUint8.length !== 64) {
+        throw new Error(
+          `Invalid private key byte length: ${privateKeyUint8.length}`
+        );
+      }
 
-    const signature = await sendAndConfirmTransaction(connection, transaction, [
-      signer,
-    ]);
-    return signature;
+      const signer = Keypair.fromSecretKey(privateKeyUint8);
+
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey,
+          toPubkey,
+          lamports: Math.round(amount * 1e9), // Ensure lamports is an integer
+        })
+      );
+
+      const signature = await sendAndConfirmTransaction(
+        connection,
+        transaction,
+        [signer]
+      );
+      console.log("Transaction signature:", signature);
+      return signature;
+    } catch (error) {
+      console.error("Error in sendSol:", error);
+      throw error;
+    }
   },
 };

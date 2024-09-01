@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, RefreshCw, DollarSign } from "lucide-react";
 import { Sidebar } from "./Sidebar";
@@ -25,7 +25,6 @@ export const Dashboard = () => {
     requestAirdrop,
     refetchBalance,
   } = useBalance(selectedAccount);
-
   const [isAddAccountDialogOpen, setIsAddAccountDialogOpen] = useState(false);
   const [isPrivateKeyDialogOpen, setIsPrivateKeyDialogOpen] = useState(false);
   const [isSendSolDialogOpen, setIsSendSolDialogOpen] = useState(false);
@@ -47,9 +46,14 @@ export const Dashboard = () => {
     }
   };
 
-  const handleSendComplete = () => {
-    refetchBalance();
-  };
+  const handleSendComplete = useCallback(
+    (signature: string) => {
+      console.log("Transaction completed with signature:", signature);
+      refetchBalance();
+      setIsSendSolDialogOpen(false);
+    },
+    [refetchBalance]
+  );
 
   if (isLoadingAccounts) {
     return <div>Loading accounts...</div>;
@@ -82,7 +86,7 @@ export const Dashboard = () => {
             />
             <div className="flex space-x-4 mb-8">
               <Button onClick={handleAirDrop}>Request air drop</Button>
-              <Button>
+              <Button onClick={() => setIsSendSolDialogOpen(true)}>
                 <Send className="mr-2" /> Send
               </Button>
               <Button disabled>
@@ -109,6 +113,7 @@ export const Dashboard = () => {
         onClose={() => setIsPrivateKeyDialogOpen(false)}
         publicKey={selectedAccount}
       />
+
       {selectedAccount && (
         <SendSolDialog
           isOpen={isSendSolDialogOpen}

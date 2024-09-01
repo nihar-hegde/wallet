@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ interface SendSolDialogProps {
   onClose: () => void;
   fromPublicKey: string;
   balance: number;
-  onSendComplete: () => void;
+  onSendComplete: (signature: string) => void;
 }
 
 export const SendSolDialog: React.FC<SendSolDialogProps> = ({
@@ -32,18 +32,23 @@ export const SendSolDialog: React.FC<SendSolDialogProps> = ({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [transactionSignature, setTransactionSignature] = useState<
+    string | null
+  >(null);
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setToPublicKey("");
     setAmount("");
     setPassword("");
     setError(null);
-  };
+    setIsSending(false);
+    setTransactionSignature(null);
+  }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     resetState();
     onClose();
-  };
+  }, [onClose, resetState]);
 
   const validateInputs = () => {
     if (!toPublicKey || !amount || !password) {
@@ -86,14 +91,18 @@ export const SendSolDialog: React.FC<SendSolDialogProps> = ({
         password
       );
       console.log("Transaction successful. Signature:", signature);
-      onSendComplete();
-      handleClose();
+      setTransactionSignature(signature);
+      onSendComplete(signature);
     } catch (err) {
       console.error("Error sending SOL:", err);
-      if (err instanceof Error && err.message.includes("password")) {
-        setError("Incorrect password");
+      if (err instanceof Error) {
+        if (err.message.includes("password")) {
+          setError("Incorrect password");
+        } else {
+          setError(`Failed to send SOL: ${err.message}`);
+        }
       } else {
-        setError("Failed to send SOL. Please try again.");
+        setError("An unknown error occurred. Please try again.");
       }
     } finally {
       setIsSending(false);
@@ -106,47 +115,58 @@ export const SendSolDialog: React.FC<SendSolDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Send SOL</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="toPublicKey">Recipient Public Key</Label>
-            <Input
-              id="toPublicKey"
-              value={toPublicKey}
-              onChange={(e) => setToPublicKey(e.target.value)}
-              placeholder="Enter recipient's public key"
-            />
+        {!transactionSignature ? (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="toPublicKey">Recipient Public Key</Label>
+              <Input
+                id="toPublicKey"
+                value={toPublicKey}
+                onChange={(e) => setToPublicKey(e.target.value)}
+                placeholder="Enter recipient's public key"
+              />
+            </div>
+            <div>
+              <Label htmlFor="amount">Amount (SOL)</Label>
+              <Input
+                id="amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Enter amount to send"
+                min="0"
+                step="0.000000001"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Available balance: {balance} SOL
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="password">Wallet Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your wallet password"
+              />
+            </div>
           </div>
-          <div>
-            <Label htmlFor="amount">Amount (SOL)</Label>
-            <Input
-              id="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter amount to send"
-              min="0"
-              step="0.000000001"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Available balance: {balance} SOL
-            </p>
+        ) : (
+          <div className="space-y-4">
+            <p>Transaction successful!</p>
+            <p>Signature: {transactionSignature}</p>
           </div>
-          <div>
-            <Label htmlFor="password">Wallet Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your wallet password"
-            />
-          </div>
-        </div>
+        )}
         {error && <p className="text-red-500 mt-2">{error}</p>}
         <DialogFooter>
-          <Button onClick={handleSendSol} disabled={isSending}>
-            {isSending ? "Sending..." : "Send SOL"}
-          </Button>
+          {!transactionSignature ? (
+            <Button onClick={handleSendSol} disabled={isSending}>
+              {isSending ? "Sending..." : "Send SOL"}
+            </Button>
+          ) : (
+            <Button onClick={handleClose}>Close</Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
