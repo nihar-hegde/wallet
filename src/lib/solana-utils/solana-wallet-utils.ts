@@ -1,4 +1,4 @@
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import { cryptoUtils } from "./encrypt-decrypt-utils";
 import { browserStorage } from "./storage-utils";
 import { derivePath } from "ed25519-hd-key";
@@ -6,6 +6,7 @@ import { passwordManager } from "./password-manager-utils";
 import { mnemonicToSeedSync } from "bip39";
 import nacl from "tweetnacl";
 import bs58 from "bs58";
+import { getSolanaConnection } from "./solana-connection";
 
 export const walletUtils = {
   async createWallet(password: string, recoveryPhrase: string) {
@@ -33,17 +34,17 @@ export const walletUtils = {
 
       const recoveryPhrase = await cryptoUtils.decrypt(
         encryptedPhrase,
-        password
+        password,
       );
 
       const existingAccounts = JSON.parse(
-        (await browserStorage.get("accounts")) || "[]"
+        (await browserStorage.get("accounts")) || "[]",
       );
 
       const newAccount = await this.createAccount(
         recoveryPhrase,
         existingAccounts.length,
-        password
+        password,
       );
 
       existingAccounts.push(newAccount);
@@ -71,7 +72,7 @@ export const walletUtils = {
 
       const encryptedPrivateKey = await cryptoUtils.encrypt(
         base58PrivateKey,
-        password
+        password,
       );
 
       return {
@@ -103,7 +104,7 @@ export const walletUtils = {
     const encryptedPhrase = await browserStorage.get("encryptedPhrase");
     console.log(
       "Verifying password, encrypted phrase exists:",
-      !!encryptedPhrase
+      !!encryptedPhrase,
     );
 
     if (!encryptedPhrase) return false;
@@ -124,5 +125,32 @@ export const walletUtils = {
 
     const encryptedMnemonic = await browserStorage.get("encryptedPhrase");
     return cryptoUtils.decrypt(encryptedMnemonic, password);
+  },
+
+  async getBalance(publicKey: string): Promise<number> {
+    const connection = getSolanaConnection();
+    const balance = await connection.getBalance(new PublicKey(publicKey));
+    console.log(balance);
+    console.log(await connection.getAccountInfo(new PublicKey(publicKey)));
+    return balance / 1e9;
+  },
+
+  async requestAirDrop(pubKey: string, amount: number = 2) {
+    const connection = getSolanaConnection();
+    const publicKey = new PublicKey(pubKey);
+
+    console.log(
+      `Requesting Air Drop of  ${amount} SOL to Publick Key = ${publicKey}`,
+    );
+
+    const signature = await connection.requestAirdrop(publicKey, amount * 1e9);
+
+    await connection.confirmTransaction(signature);
+
+    console.log(
+      `Airdrop of ${amount} SOL sent to public key ${publicKey} successful`,
+    );
+
+    return signature;
   },
 };
