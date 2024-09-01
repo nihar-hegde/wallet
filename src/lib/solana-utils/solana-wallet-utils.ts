@@ -1,4 +1,10 @@
-import { Keypair, PublicKey } from "@solana/web3.js";
+import {
+  Keypair,
+  PublicKey,
+  sendAndConfirmTransaction,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import { cryptoUtils } from "./encrypt-decrypt-utils";
 import { browserStorage } from "./storage-utils";
 import { derivePath } from "ed25519-hd-key";
@@ -34,17 +40,17 @@ export const walletUtils = {
 
       const recoveryPhrase = await cryptoUtils.decrypt(
         encryptedPhrase,
-        password,
+        password
       );
 
       const existingAccounts = JSON.parse(
-        (await browserStorage.get("accounts")) || "[]",
+        (await browserStorage.get("accounts")) || "[]"
       );
 
       const newAccount = await this.createAccount(
         recoveryPhrase,
         existingAccounts.length,
-        password,
+        password
       );
 
       existingAccounts.push(newAccount);
@@ -72,7 +78,7 @@ export const walletUtils = {
 
       const encryptedPrivateKey = await cryptoUtils.encrypt(
         base58PrivateKey,
-        password,
+        password
       );
 
       return {
@@ -104,7 +110,7 @@ export const walletUtils = {
     const encryptedPhrase = await browserStorage.get("encryptedPhrase");
     console.log(
       "Verifying password, encrypted phrase exists:",
-      !!encryptedPhrase,
+      !!encryptedPhrase
     );
 
     if (!encryptedPhrase) return false;
@@ -140,7 +146,7 @@ export const walletUtils = {
     const publicKey = new PublicKey(pubKey);
 
     console.log(
-      `Requesting Air Drop of  ${amount} SOL to Publick Key = ${publicKey}`,
+      `Requesting Air Drop of  ${amount} SOL to Publick Key = ${publicKey}`
     );
 
     const signature = await connection.requestAirdrop(publicKey, amount * 1e9);
@@ -148,9 +154,38 @@ export const walletUtils = {
     await connection.confirmTransaction(signature);
 
     console.log(
-      `Airdrop of ${amount} SOL sent to public key ${publicKey} successful`,
+      `Airdrop of ${amount} SOL sent to public key ${publicKey} successful`
     );
 
+    return signature;
+  },
+
+  async sendSol(
+    fromPublicKey: string,
+    toPublicKey: string,
+    amount: number,
+    password: string
+  ) {
+    const connection = getSolanaConnection();
+    const fromPubkey = new PublicKey(fromPublicKey);
+    const toPubkey = new PublicKey(toPublicKey);
+
+    const privateKeyHex = await this.getPrivateKey(fromPublicKey, password);
+    const privateKey = Buffer.from(privateKeyHex, "hex");
+
+    const signer = Keypair.fromSecretKey(privateKey);
+
+    const transaction = new Transaction().add(
+      SystemProgram.transfer({
+        fromPubkey,
+        toPubkey,
+        lamports: amount * 1e9,
+      })
+    );
+
+    const signature = await sendAndConfirmTransaction(connection, transaction, [
+      signer,
+    ]);
     return signature;
   },
 };

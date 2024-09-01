@@ -31,7 +31,7 @@ export const Dashboard = () => {
       await addAccount(password);
       setIsAddAccountDialogOpen(false);
     } catch (error) {
-      // Handle error (e.g., show error message in dialog)
+      console.log(error);
     }
   };
 
@@ -39,7 +39,7 @@ export const Dashboard = () => {
     try {
       await requestAirdrop();
     } catch (error) {
-      // Handle error (e.g., show toast notification)
+      console.log(error);
     }
   };
 
@@ -62,10 +62,10 @@ export const Dashboard = () => {
 
       <div className="flex-1 p-8">
         {selectedAccount ? (
-          <>
+          <div className="flex flex-col gap-4">
             <AccountDetails
               account={accounts.find(
-                (acc) => acc.publicKey === selectedAccount
+                (acc) => acc.publicKey === selectedAccount,
               )}
               balance={balance}
               isLoadingBalance={isLoadingBalance}
@@ -77,14 +77,14 @@ export const Dashboard = () => {
               <Button>
                 <Send className="mr-2" /> Send
               </Button>
-              <Button>
+              <Button disabled>
                 <RefreshCw className="mr-2" /> Swap
               </Button>
-              <Button>
+              <Button disabled>
                 <DollarSign className="mr-2" /> Buy
               </Button>
             </div>
-          </>
+          </div>
         ) : (
           <p>Select an account to view details</p>
         )}
