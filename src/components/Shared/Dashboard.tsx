@@ -58,7 +58,7 @@ export const Dashboard = () => {
       setSelectedAccount(newPublicKey);
     } catch (error) {
       setError(
-        "Failed to add account. Please check your password and try again."
+        "Failed to add account. Please check your password and try again.",
       );
     } finally {
       setIsAddingAccount(false);
@@ -70,7 +70,7 @@ export const Dashboard = () => {
     try {
       const decryptedPrivateKey = await walletUtils.getPrivateKey(
         selectedAccount!,
-        password
+        password,
       );
       setPrivateKey(decryptedPrivateKey);
       setError("");
@@ -78,6 +78,36 @@ export const Dashboard = () => {
       setError("Invalid password or failed to decrypt private key");
     } finally {
       setIsDecrypting(false);
+    }
+  };
+
+  const handleGetBalance = async () => {
+    try {
+      if (selectedAccount) {
+        const balance = await walletUtils.getBalance(selectedAccount);
+        console.log("=======================================");
+        console.log("THE balance fetched is:===== ", balance);
+        console.log("=======================================");
+      } else {
+        console.log("NO selected account.");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleAirDrop = async () => {
+    try {
+      if (selectedAccount) {
+        const signature = await walletUtils.requestAirDrop(selectedAccount, 2);
+        console.log("=======================================");
+        console.log("THE air drop done ", signature);
+        console.log("=======================================");
+      } else {
+        console.log("NO selected account.");
+      }
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -92,7 +122,7 @@ export const Dashboard = () => {
 
   const getSelectedAccountName = () => {
     const selectedAccountObj = accounts.find(
-      (account) => account.publicKey === selectedAccount
+      (account) => account.publicKey === selectedAccount,
     );
     return selectedAccountObj ? selectedAccountObj.name : "Unknown Account";
   };
@@ -114,6 +144,8 @@ export const Dashboard = () => {
             </h1>
             <h2 className="text-4xl font-bold mb-4">$0.00</h2>
             <p className="text-gray-400 mb-8">+$0.00 +0.00%</p>
+            <Button onClick={handleGetBalance}>Get balance</Button>
+            <Button onClick={handleAirDrop}>Requrest air drop</Button>
             <div className="flex space-x-4 mb-8">
               <Button>
                 <Send className="mr-2" /> Send
