@@ -7,6 +7,7 @@ import { useBalance } from "@/hooks/useBalance";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { PrivateKeyDialog } from "./PrivateKeyDialog";
 import { AccountDetails } from "./AccountDetails";
+import { SendSolDialog } from "./SendSolDialog";
 
 export const Dashboard = () => {
   const {
@@ -22,9 +23,12 @@ export const Dashboard = () => {
     isLoading: isLoadingBalance,
     error: balanceError,
     requestAirdrop,
+    refetchBalance,
   } = useBalance(selectedAccount);
+
   const [isAddAccountDialogOpen, setIsAddAccountDialogOpen] = useState(false);
   const [isPrivateKeyDialogOpen, setIsPrivateKeyDialogOpen] = useState(false);
+  const [isSendSolDialogOpen, setIsSendSolDialogOpen] = useState(false);
 
   const handleAddAccount = async (password: string) => {
     try {
@@ -41,6 +45,10 @@ export const Dashboard = () => {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const handleSendComplete = () => {
+    refetchBalance();
   };
 
   if (isLoadingAccounts) {
@@ -65,7 +73,7 @@ export const Dashboard = () => {
           <div className="flex flex-col gap-4">
             <AccountDetails
               account={accounts.find(
-                (acc) => acc.publicKey === selectedAccount,
+                (acc) => acc.publicKey === selectedAccount
               )}
               balance={balance}
               isLoadingBalance={isLoadingBalance}
@@ -101,6 +109,15 @@ export const Dashboard = () => {
         onClose={() => setIsPrivateKeyDialogOpen(false)}
         publicKey={selectedAccount}
       />
+      {selectedAccount && (
+        <SendSolDialog
+          isOpen={isSendSolDialogOpen}
+          onClose={() => setIsSendSolDialogOpen(false)}
+          fromPublicKey={selectedAccount}
+          balance={balance}
+          onSendComplete={handleSendComplete}
+        />
+      )}
     </div>
   );
 };
