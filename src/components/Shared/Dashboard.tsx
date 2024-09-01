@@ -1,163 +1,79 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Send, RefreshCw, DollarSign } from "lucide-react";
 import { Sidebar } from "./Sidebar";
-import { CopyButton } from "./CopyToClipboard";
+import { useAccounts } from "@/hooks/useAccounts";
+import { useBalance } from "@/hooks/useBalance";
+import { AddAccountDialog } from "./AddAccountDialog";
+import { PrivateKeyDialog } from "./PrivateKeyDialog";
+import { AccountDetails } from "./AccountDetails";
 
 export const Dashboard = () => {
-  const [accounts, setAccounts] = useState<
-    Array<{ name: string; publicKey: string }>
-  >([]);
-  const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
-  const [isPrivateKeyDialogOpen, setIsPrivateKeyDialogOpen] = useState(false);
+  const {
+    accounts,
+    selectedAccount,
+    setSelectedAccount,
+    addAccount,
+    isLoading: isLoadingAccounts,
+    error: accountsError,
+  } = useAccounts();
+  const {
+    balance,
+    isLoading: isLoadingBalance,
+    error: balanceError,
+    requestAirdrop,
+  } = useBalance(selectedAccount);
   const [isAddAccountDialogOpen, setIsAddAccountDialogOpen] = useState(false);
-  const [password, setPassword] = useState("");
-  const [privateKey, setPrivateKey] = useState("");
-  const [error, setError] = useState("");
-  const [isDecrypting, setIsDecrypting] = useState(false);
-  const [isAddingAccount, setIsAddingAccount] = useState(false);
-  const [balance, setBalance] = useState(0);
-  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [isPrivateKeyDialogOpen, setIsPrivateKeyDialogOpen] = useState(false);
 
-  const loadAccounts = useCallback(async () => {
-    const accountList = await walletUtils.getAccounts();
-    setAccounts(accountList);
-
-    // Select the first account by default if there are accounts and none is selected
-    if (accountList.length > 0 && !selectedAccount) {
-      setSelectedAccount(accountList[0].publicKey);
-    }
-  }, [selectedAccount]); // Add selectedAccount as a dependency
-
-  const handleGetBalance = useCallback(async () => {
-    setIsLoadingBalance(true);
+  const handleAddAccount = async (password: string) => {
     try {
-      if (selectedAccount) {
-        const balance = await walletUtils.getBalance(selectedAccount);
-        setBalance(balance);
-      } else {
-        console.log("No selected account.");
-      }
-    } catch (error) {
-      console.log("Error fetching balance:", error);
-      setError("Failed to fetch balance. Please try again later.");
-    } finally {
-      setIsLoadingBalance(false);
-    }
-  }, [selectedAccount]); // Add selectedAccount as a dependency
-
-  useEffect(() => {
-    loadAccounts();
-  }, [loadAccounts]); // Include loadAccounts in the dependency array
-
-  useEffect(() => {
-    if (selectedAccount) {
-      handleGetBalance();
-    }
-  }, [selectedAccount, handleGetBalance]);
-
-  const handleSelectAccount = (publicKey: string) => {
-    setSelectedAccount(publicKey);
-    setPrivateKey("");
-    setError("");
-  };
-
-  const handleAddAccount = async () => {
-    setIsAddingAccount(true);
-    setError("");
-    try {
-      const newPublicKey = await walletUtils.addAccount(password);
-      await loadAccounts(); // Reload the accounts to include the new one
+      await addAccount(password);
       setIsAddAccountDialogOpen(false);
-      setPassword("");
-      // Select the newly added account
-      setSelectedAccount(newPublicKey);
     } catch (error) {
-      setError(
-        "Failed to add account. Please check your password and try again."
-      );
-    } finally {
-      setIsAddingAccount(false);
-    }
-  };
-
-  const handleShowPrivateKey = async () => {
-    setIsDecrypting(true);
-    try {
-      const decryptedPrivateKey = await walletUtils.getPrivateKey(
-        selectedAccount!,
-        password
-      );
-      setPrivateKey(decryptedPrivateKey);
-      setError("");
-    } catch (error) {
-      setError("Invalid password or failed to decrypt private key");
-    } finally {
-      setIsDecrypting(false);
+      // Handle error (e.g., show error message in dialog)
     }
   };
 
   const handleAirDrop = async () => {
     try {
-      if (selectedAccount) {
-        const signature = await walletUtils.requestAirDrop(selectedAccount, 2);
-        console.log("Air drop completed:", signature);
-        // Refresh balance after airdrop
-        handleGetBalance();
-      } else {
-        console.log("No selected account.");
-      }
+      await requestAirdrop();
     } catch (error) {
-      console.log("Error requesting airdrop:", error);
-      setError("Failed to request airdrop. Please try again later.");
+      // Handle error (e.g., show toast notification)
     }
   };
 
-  const resetPrivateKeyState = () => {
-    setPrivateKey("");
-    setPassword("");
-    setError("");
-  };
+  if (isLoadingAccounts) {
+    return <div>Loading accounts...</div>;
+  }
 
-  const truncatePublicKey = (key: string) =>
-    `${key.slice(0, 5)}...${key.slice(-5)}`;
-
-  const getSelectedAccountName = () => {
-    const selectedAccountObj = accounts.find(
-      (account) => account.publicKey === selectedAccount
-    );
-    return selectedAccountObj ? selectedAccountObj.name : "Unknown Account";
-  };
+  if (accountsError) {
+    return <div>Error: {accountsError}</div>;
+  }
 
   return (
     <div className="flex p-2 rounded-md bg-neutral-900 text-white h-[600px] w-[800px]">
       <Sidebar
         accounts={accounts}
-        onSelectAccount={handleSelectAccount}
+        onSelectAccount={setSelectedAccount}
         onAddAccount={() => setIsAddAccountDialogOpen(true)}
         selectedAccountPublicKey={selectedAccount}
       />
 
       <div className="flex-1 p-8">
         {selectedAccount ? (
-          <div>
-            <h1 className="text-2xl font-bold mb-4">
-              {getSelectedAccountName()}
-            </h1>
-            <h2 className="text-4xl font-bold mb-4">{balance} SOL</h2>
-            <p className="text-gray-400 mb-8">+$0.00 +0.00%</p>
-            <Button onClick={handleGetBalance}>Get balance</Button>
-            <Button onClick={handleAirDrop}>Requrest air drop</Button>
+          <>
+            <AccountDetails
+              account={accounts.find(
+                (acc) => acc.publicKey === selectedAccount
+              )}
+              balance={balance}
+              isLoadingBalance={isLoadingBalance}
+              balanceError={balanceError}
+              onShowPrivateKey={() => setIsPrivateKeyDialogOpen(true)}
+            />
             <div className="flex space-x-4 mb-8">
+              <Button onClick={handleAirDrop}>Request air drop</Button>
               <Button>
                 <Send className="mr-2" /> Send
               </Button>
@@ -168,101 +84,23 @@ export const Dashboard = () => {
                 <DollarSign className="mr-2" /> Buy
               </Button>
             </div>
-            <div className="bg-neutral-800 p-4 rounded-lg">
-              <div className="flex items-center justify-between mb-4">
-                <span>Public Key:</span>
-                <div className="flex items-center">
-                  <span>{truncatePublicKey(selectedAccount)}</span>
-                  <CopyButton text={selectedAccount} />
-                </div>
-              </div>
-              <Button
-                onClick={() => setIsPrivateKeyDialogOpen(true)}
-                className="w-full"
-              >
-                Show Private Key
-              </Button>
-            </div>
-          </div>
+          </>
         ) : (
           <p>Select an account to view details</p>
         )}
       </div>
 
-      {/* Private Key Dialog */}
-      <Dialog
-        open={isPrivateKeyDialogOpen}
-        onOpenChange={(open) => {
-          setIsPrivateKeyDialogOpen(open);
-          if (!open) resetPrivateKeyState();
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {privateKey ? "Private Key" : "Enter Password"}
-            </DialogTitle>
-          </DialogHeader>
-          {!privateKey ? (
-            <>
-              <Input
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              {error && <p className="text-red-500 mt-2">{error}</p>}
-              <DialogFooter>
-                <Button onClick={handleShowPrivateKey} disabled={isDecrypting}>
-                  {isDecrypting ? "Decrypting..." : "Decrypt Private Key"}
-                </Button>
-              </DialogFooter>
-            </>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="font-mono break-all">
-                  {truncatePublicKey(privateKey)}
-                </span>
-                <CopyButton text={privateKey} />
-              </div>
-              <DialogFooter>
-                <Button onClick={resetPrivateKeyState}>Close</Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <AddAccountDialog
+        isOpen={isAddAccountDialogOpen}
+        onClose={() => setIsAddAccountDialogOpen(false)}
+        onAddAccount={handleAddAccount}
+      />
 
-      {/* Add Account Dialog */}
-      <Dialog
-        open={isAddAccountDialogOpen}
-        onOpenChange={(open) => {
-          setIsAddAccountDialogOpen(open);
-          if (!open) {
-            setPassword("");
-            setError("");
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Account</DialogTitle>
-          </DialogHeader>
-          <Input
-            type="password"
-            placeholder="Enter wallet password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          {error && <p className="text-red-500 mt-2">{error}</p>}
-          <DialogFooter>
-            <Button onClick={handleAddAccount} disabled={isAddingAccount}>
-              {isAddingAccount ? "Adding Account..." : "Add Account"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PrivateKeyDialog
+        isOpen={isPrivateKeyDialogOpen}
+        onClose={() => setIsPrivateKeyDialogOpen(false)}
+        publicKey={selectedAccount}
+      />
     </div>
   );
 };
