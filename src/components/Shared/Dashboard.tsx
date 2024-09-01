@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,12 +25,10 @@ export const Dashboard = () => {
   const [error, setError] = useState("");
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [isAddingAccount, setIsAddingAccount] = useState(false);
+  const [balance, setBalance] = useState(0);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
-  useEffect(() => {
-    loadAccounts();
-  }, []);
-
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     const accountList = await walletUtils.getAccounts();
     setAccounts(accountList);
 
@@ -38,7 +36,34 @@ export const Dashboard = () => {
     if (accountList.length > 0 && !selectedAccount) {
       setSelectedAccount(accountList[0].publicKey);
     }
-  };
+  }, [selectedAccount]); // Add selectedAccount as a dependency
+
+  const handleGetBalance = useCallback(async () => {
+    setIsLoadingBalance(true);
+    try {
+      if (selectedAccount) {
+        const balance = await walletUtils.getBalance(selectedAccount);
+        setBalance(balance);
+      } else {
+        console.log("No selected account.");
+      }
+    } catch (error) {
+      console.log("Error fetching balance:", error);
+      setError("Failed to fetch balance. Please try again later.");
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  }, [selectedAccount]); // Add selectedAccount as a dependency
+
+  useEffect(() => {
+    loadAccounts();
+  }, [loadAccounts]); // Include loadAccounts in the dependency array
+
+  useEffect(() => {
+    if (selectedAccount) {
+      handleGetBalance();
+    }
+  }, [selectedAccount, handleGetBalance]);
 
   const handleSelectAccount = (publicKey: string) => {
     setSelectedAccount(publicKey);
@@ -58,7 +83,7 @@ export const Dashboard = () => {
       setSelectedAccount(newPublicKey);
     } catch (error) {
       setError(
-        "Failed to add account. Please check your password and try again.",
+        "Failed to add account. Please check your password and try again."
       );
     } finally {
       setIsAddingAccount(false);
@@ -70,7 +95,7 @@ export const Dashboard = () => {
     try {
       const decryptedPrivateKey = await walletUtils.getPrivateKey(
         selectedAccount!,
-        password,
+        password
       );
       setPrivateKey(decryptedPrivateKey);
       setError("");
@@ -81,33 +106,19 @@ export const Dashboard = () => {
     }
   };
 
-  const handleGetBalance = async () => {
-    try {
-      if (selectedAccount) {
-        const balance = await walletUtils.getBalance(selectedAccount);
-        console.log("=======================================");
-        console.log("THE balance fetched is:===== ", balance);
-        console.log("=======================================");
-      } else {
-        console.log("NO selected account.");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const handleAirDrop = async () => {
     try {
       if (selectedAccount) {
         const signature = await walletUtils.requestAirDrop(selectedAccount, 2);
-        console.log("=======================================");
-        console.log("THE air drop done ", signature);
-        console.log("=======================================");
+        console.log("Air drop completed:", signature);
+        // Refresh balance after airdrop
+        handleGetBalance();
       } else {
-        console.log("NO selected account.");
+        console.log("No selected account.");
       }
     } catch (error) {
-      console.log(error);
+      console.log("Error requesting airdrop:", error);
+      setError("Failed to request airdrop. Please try again later.");
     }
   };
 
@@ -122,7 +133,7 @@ export const Dashboard = () => {
 
   const getSelectedAccountName = () => {
     const selectedAccountObj = accounts.find(
-      (account) => account.publicKey === selectedAccount,
+      (account) => account.publicKey === selectedAccount
     );
     return selectedAccountObj ? selectedAccountObj.name : "Unknown Account";
   };
@@ -142,7 +153,7 @@ export const Dashboard = () => {
             <h1 className="text-2xl font-bold mb-4">
               {getSelectedAccountName()}
             </h1>
-            <h2 className="text-4xl font-bold mb-4">$0.00</h2>
+            <h2 className="text-4xl font-bold mb-4">{balance} SOL</h2>
             <p className="text-gray-400 mb-8">+$0.00 +0.00%</p>
             <Button onClick={handleGetBalance}>Get balance</Button>
             <Button onClick={handleAirDrop}>Requrest air drop</Button>
