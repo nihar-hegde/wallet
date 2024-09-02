@@ -72,14 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <PlusCircle className="w-4 h-4 mr-2" />
           Add Account
         </Button>
-        <Button
-          variant="outline"
-          className="w-full bg-secondary hover:bg-secondary/80 text-secondary-foreground border-border"
-          onClick={onAddAccount}
-        >
-          <Settings className="w-4 h-4 mr-2" />
-          Settings
-        </Button>
+
         <Link href={"/settings"} className={buttonVariants()}>
           <Settings className="w-4 h-4 mr-2" /> Settings
         </Link>

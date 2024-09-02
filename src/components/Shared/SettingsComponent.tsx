@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -13,6 +13,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
 import { browserStorage } from "@/lib/solana-utils/storage-utils";
 import { CopyButton } from "./CopyToClipboard";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 interface SettingsPageProps {
   selectedAccountPublicKey: string | null;
@@ -81,22 +83,41 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-2xl font-bold mb-4">Settings</h1>
-
-      <Button onClick={() => setIsShowMnemonicModalOpen(true)}>
-        Show Secret Recovery Phrase
-      </Button>
-      <Button onClick={() => setIsShowKeysModalOpen(true)}>
-        Show Account Keys
-      </Button>
-      <Button
-        onClick={() => setIsDeleteWalletModalOpen(true)}
-        variant="destructive"
-      >
-        Delete Wallet
-      </Button>
-
+    <div className="">
+      <div className="w-full max-w-md bg-neutral-900 rounded-lg shadow-lg overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <Link
+              href="/dashboard"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            </Link>
+            <h1 className="text-2xl font-bold text-white">Settings</h1>
+          </div>
+          <div className="space-y-4">
+            <Button
+              onClick={() => setIsShowMnemonicModalOpen(true)}
+              className="w-full "
+            >
+              Show Secret Recovery Phrase
+            </Button>
+            <Button
+              onClick={() => setIsShowKeysModalOpen(true)}
+              className="w-full"
+            >
+              Show Account Keys
+            </Button>
+            <Button
+              onClick={() => setIsDeleteWalletModalOpen(true)}
+              variant="destructive"
+              className="w-full"
+            >
+              Delete Wallet
+            </Button>
+          </div>
+        </div>
+      </div>
       <Dialog
         open={isShowMnemonicModalOpen}
         onOpenChange={setIsShowMnemonicModalOpen}
