@@ -1,4 +1,5 @@
 import {
+  Connection,
   Keypair,
   PublicKey,
   sendAndConfirmTransaction,
@@ -165,11 +166,8 @@ export const walletUtils = {
     toPublicKey: string,
     amount: number,
     password: string
-  ) {
-    console.log("Sending SOL from:", fromPublicKey, "to:", toPublicKey);
-    console.log("Amount:", amount);
-
-    const connection = getSolanaConnection();
+  ): Promise<{ signature: string; status: string }> {
+    const connection: Connection = getSolanaConnection();
     const fromPubkey = new PublicKey(fromPublicKey);
     const toPubkey = new PublicKey(toPublicKey);
 
@@ -178,9 +176,6 @@ export const walletUtils = {
         fromPublicKey,
         password
       );
-      console.log("Private key length (Base58):", base58PrivateKey.length);
-
-      // Decode the Base58 private key
       const privateKeyUint8 = bs58.decode(base58PrivateKey);
 
       if (privateKeyUint8.length !== 64) {
@@ -195,20 +190,49 @@ export const walletUtils = {
         SystemProgram.transfer({
           fromPubkey,
           toPubkey,
-          lamports: Math.round(amount * 1e9), // Ensure lamports is an integer
+          lamports: Math.round(amount * 1e9),
         })
       );
 
-      const signature = await sendAndConfirmTransaction(
-        connection,
-        transaction,
-        [signer]
-      );
-      console.log("Transaction signature:", signature);
-      return signature;
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = fromPubkey;
+
+      // Sign the transaction
+      transaction.sign(signer);
+
+      // Send the raw transaction
+      const rawTransaction = transaction.serialize();
+      const signature = await connection.sendRawTransaction(rawTransaction, {
+        skipPreflight: false,
+        preflightCommitment: "confirmed",
+      });
+
+      console.log("Transaction sent with signature:", signature);
+
+      // Check the initial status
+      const initialStatus = await this.checkTransactionStatus(signature);
+
+      return { signature, status: initialStatus };
     } catch (error) {
       console.error("Error in sendSol:", error);
       throw error;
+    }
+  },
+
+  async checkTransactionStatus(signature: string): Promise<string> {
+    const connection: Connection = getSolanaConnection();
+    const status = await connection.getSignatureStatus(signature);
+
+    if (status.value?.err) {
+      return "failed";
+    } else if (
+      status.value?.confirmationStatus === "confirmed" ||
+      status.value?.confirmationStatus === "finalized"
+    ) {
+      return status.value.confirmationStatus;
+    } else {
+      return "processing";
     }
   },
 };
