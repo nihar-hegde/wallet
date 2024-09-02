@@ -10,7 +10,7 @@ import { cryptoUtils } from "./encrypt-decrypt-utils";
 import { browserStorage } from "./storage-utils";
 import { derivePath } from "ed25519-hd-key";
 import { passwordManager } from "./password-manager-utils";
-import { mnemonicToSeedSync } from "bip39";
+import { mnemonicToSeedSync, validateMnemonic } from "bip39";
 import nacl from "tweetnacl";
 import bs58 from "bs58";
 import { getSolanaConnection } from "./solana-connection";
@@ -234,5 +234,18 @@ export const walletUtils = {
     } else {
       return "processing";
     }
+  },
+
+  async recoverWallet(mnemonic: string, newPassword: string) {
+    if (!validateMnemonic(mnemonic)) {
+      throw new Error("Invalid mnemonic phrase");
+    }
+
+    const encryptedPhrase = await cryptoUtils.encrypt(mnemonic, newPassword);
+    await browserStorage.set("encryptedPhrase", encryptedPhrase);
+    await passwordManager.setPassword(newPassword);
+
+    const firstAccount = await this.createAccount(mnemonic, 0, newPassword);
+    await browserStorage.set("accounts", JSON.stringify([firstAccount]));
   },
 };
