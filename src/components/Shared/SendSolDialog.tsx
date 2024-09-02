@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { walletUtils } from "@/lib/solana-utils/solana-wallet-utils";
 import { PublicKey } from "@solana/web3.js";
+import { CopyButton } from "./CopyToClipboard";
 
 interface SendSolDialogProps {
   isOpen: boolean;
@@ -100,10 +101,6 @@ export const SendSolDialog: React.FC<SendSolDialogProps> = ({
 
       setTransactionSignature(signature);
       setTransactionStatus(status);
-
-      if (status === "confirmed" || status === "finalized") {
-        onSendComplete(signature);
-      }
     } catch (err) {
       console.error("Error sending SOL:", err);
       if (err instanceof Error) {
@@ -141,6 +138,9 @@ export const SendSolDialog: React.FC<SendSolDialogProps> = ({
     return () => clearInterval(intervalId);
   }, [transactionSignature, transactionStatus, onSendComplete]);
 
+  const truncateSignature = (key: string) =>
+    `${key.slice(0, 5)}...${key.slice(-5)}`;
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent>
@@ -149,12 +149,50 @@ export const SendSolDialog: React.FC<SendSolDialogProps> = ({
         </DialogHeader>
         {!transactionSignature ? (
           <div className="space-y-4">
-            {/* ... (keep your existing input fields) */}
+            <div>
+              <Label htmlFor="toPublicKey">Recipient Public Key</Label>
+              <Input
+                id="toPublicKey"
+                value={toPublicKey}
+                onChange={(e) => setToPublicKey(e.target.value)}
+                placeholder="Enter recipient's public key"
+              />
+            </div>
+            <div>
+              <Label htmlFor="amount">Amount (SOL)</Label>
+              <Input
+                id="amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Enter amount to send"
+                min="0"
+                step="0.000000001"
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                Available balance: {balance} SOL
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="password">Wallet Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your wallet password"
+              />
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
-            <p>Transaction {transactionStatus}</p>
-            <p>Signature: {transactionSignature}</p>
+            <p>Transaction {transactionStatus}!</p>
+            <div className="flex items-center justify-between  p-2 rounded">
+              <span className="font-mono">
+                {truncateSignature(transactionSignature)}
+              </span>
+              <CopyButton text={transactionSignature} />
+            </div>
             {transactionStatus === "processing" && (
               <p>
                 This may take a while. You can close this dialog and check the
@@ -170,9 +208,7 @@ export const SendSolDialog: React.FC<SendSolDialogProps> = ({
               {isSending ? "Sending..." : "Send SOL"}
             </Button>
           ) : (
-            <Button onClick={handleClose} disabled={isSending}>
-              Close
-            </Button>
+            <Button onClick={handleClose}>Close</Button>
           )}
         </DialogFooter>
       </DialogContent>
