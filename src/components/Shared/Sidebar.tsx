@@ -1,7 +1,8 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { PlusCircle, Settings } from "lucide-react";
+import Link from "next/link";
 
 interface Account {
   name: string;
@@ -79,6 +80,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Settings className="w-4 h-4 mr-2" />
           Settings
         </Button>
+        <Link href={"/settings"} className={buttonVariants()}>
+          <Settings className="w-4 h-4 mr-2" /> Settings
+        </Link>
       </div>
     </div>
   );
