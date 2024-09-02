@@ -1,29 +1,38 @@
 import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wallet } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
 export const Welcome = () => {
   return (
-    <div className="flex item-center justify-center">
-      <div className="flex flex-col gap-8 items-center justify-center">
-        <Wallet size={150} />
-        <h1 className="text-4xl font-bold ">Welcome to Wallet</h1>
-        <div className="flex flex-col items-center gap-4">
+    <div className="flex items-center justify-center  w-[600px] h-[500px]">
+      <Card className="w-full h-full flex flex-col items-center justify-center">
+        <CardHeader className="items-center">
+          <Wallet className="h-20 w-20 text-primary mb-4" />
+          <CardTitle className="text-2xl font-semibold text-center">
+            Welcome to CryptoVault
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-4">
           <Link
-            href={"/onboarding/2"}
-            className={`${buttonVariants()} rounded-xl`}
+            href="/onboarding/2"
+            className={buttonVariants({ size: "lg", className: "w-full" })}
           >
             Create a New Wallet
           </Link>
           <Link
-            href={"/recover-account"}
-            className={`${buttonVariants({ variant: "outline" })} rounded-xl`}
+            href="/recover-account"
+            className={buttonVariants({
+              variant: "outline",
+              size: "lg",
+              className: "w-full",
+            })}
           >
             Recover Existing Wallet
           </Link>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
