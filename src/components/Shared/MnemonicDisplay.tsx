@@ -24,7 +24,10 @@ export const MnemonicDisplay: React.FC<MnemonicDisplayProps> = ({
   };
 
   return (
-    <div className="bg-neutral-900 p-5 rounded-xl flex items-center gap-6 flex-col">
+    <div
+      className="bg-neutral-900 p-5 rounded-xl flex items-center gap-6 flex-col cursor-pointer"
+      onClick={handleCopyToClipboard}
+    >
       <div className="grid grid-cols-3 gap-4 w-full">
         {phrase.split(" ").map((word, index) => (
           <div key={index} className="p-4 bg-neutral-950 rounded-xl">
@@ -38,9 +41,9 @@ export const MnemonicDisplay: React.FC<MnemonicDisplayProps> = ({
         <>
           <Separator />
           <div>
-            <Button onClick={handleCopyToClipboard} variant="ghost">
-              {isCopied ? "Copied!" : "Click to copy phrase"}
-            </Button>
+            {isCopied
+              ? "Copied!"
+              : "Click anywhere in this card to copy phrase"}
           </div>
         </>
       )}
