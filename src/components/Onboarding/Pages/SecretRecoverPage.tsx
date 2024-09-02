@@ -4,16 +4,14 @@ import {
   selectedBlockChain,
 } from "@/Recoil/atoms/onboardingAtoms";
 import { useState } from "react";
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import { Separator } from "@/components/ui/separator";
+import { useRecoilState, useRecoilValue } from "recoil";
 import { useRouter } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import { generateRecoveryPhrase } from "@/lib/solana-utils/solana-utils";
+import { MnemonicDisplay } from "@/components/Shared/MnemonicDisplay";
 
 export const SecretRecoveryPage = () => {
   const [phrase, setPhrase] = useState("");
-  const [isCopied, setIsCopied] = useState(false);
-  //const setRecoilPhrase = useSetRecoilState(secretRecoveryPhrase);
   const [recoilPhrase, setRecoilPhrase] = useRecoilState(secretRecoveryPhrase);
   const blockchain = useRecoilValue(selectedBlockChain);
   const [checked, setChecked] = useState(false);
@@ -33,16 +31,6 @@ export const SecretRecoveryPage = () => {
     const newPhrase = generateRecoveryPhrase();
     setPhrase(newPhrase);
     setRecoilPhrase(newPhrase);
-  };
-
-  const handleCopyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(phrase);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 3000);
-    } catch (err) {
-      console.error("Failed to copy text: ", err);
-    }
   };
 
   return (
@@ -66,27 +54,7 @@ export const SecretRecoveryPage = () => {
         </Button>
       ) : (
         <div>
-          <div
-            className="bg-neutral-900 p-5 rounded-xl flex items-center gap-6 flex-col cursor-pointer "
-            onClick={handleCopyToClipboard}
-          >
-            <div className="grid grid-cols-3 gap-4 w-full">
-              {phrase.split(" ").map((item, index) => (
-                <div key={index} className="p-4 bg-neutral-950 rounded-xl">
-                  <p>
-                    {index + 1}. {item}
-                  </p>
-                </div>
-              ))}
-            </div>
-            <Separator />
-
-            <div>
-              <p>
-                {isCopied ? "Copied!" : "Click anywhere on this card to copy."}
-              </p>
-            </div>
-          </div>
+          <MnemonicDisplay phrase={phrase} />
 
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center space-x-2 max-w-xl mt-6">

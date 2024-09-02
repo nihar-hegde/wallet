@@ -15,6 +15,7 @@ import { browserStorage } from "@/lib/solana-utils/storage-utils";
 import { CopyButton } from "./CopyToClipboard";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { MnemonicDisplay } from "./MnemonicDisplay";
 
 interface SettingsPageProps {
   selectedAccountPublicKey: string | null;
@@ -70,16 +71,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     } catch (err) {
       setError("Failed to delete wallet data");
     }
-  };
-
-  const renderMnemonicWords = (phrase: string) => {
-    return phrase.split(" ").map((word, index) => (
-      <div key={index} className="p-2 bg-neutral-800 rounded-md">
-        <p>
-          {index + 1}. {word}
-        </p>
-      </div>
-    ));
   };
 
   return (
@@ -140,9 +131,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </DialogFooter>
             </>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {renderMnemonicWords(mnemonic)}
-            </div>
+            <MnemonicDisplay phrase={mnemonic} />
           )}
         </DialogContent>
       </Dialog>
