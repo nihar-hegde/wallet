@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Send, RefreshCw, DollarSign } from "lucide-react";
 import { Sidebar } from "./Sidebar";
@@ -7,6 +7,7 @@ import { useBalance } from "@/hooks/useBalance";
 import { AddAccountDialog } from "./AddAccountDialog";
 import { PrivateKeyDialog } from "./PrivateKeyDialog";
 import { AccountDetails } from "./AccountDetails";
+import { SendSolDialog } from "./SendSolDialog";
 
 export const Dashboard = () => {
   const {
@@ -22,16 +23,18 @@ export const Dashboard = () => {
     isLoading: isLoadingBalance,
     error: balanceError,
     requestAirdrop,
+    refetchBalance,
   } = useBalance(selectedAccount);
   const [isAddAccountDialogOpen, setIsAddAccountDialogOpen] = useState(false);
   const [isPrivateKeyDialogOpen, setIsPrivateKeyDialogOpen] = useState(false);
+  const [isSendSolDialogOpen, setIsSendSolDialogOpen] = useState(false);
 
   const handleAddAccount = async (password: string) => {
     try {
       await addAccount(password);
       setIsAddAccountDialogOpen(false);
     } catch (error) {
-      // Handle error (e.g., show error message in dialog)
+      console.log(error);
     }
   };
 
@@ -39,9 +42,18 @@ export const Dashboard = () => {
     try {
       await requestAirdrop();
     } catch (error) {
-      // Handle error (e.g., show toast notification)
+      console.log(error);
     }
   };
+
+  const handleSendComplete = useCallback(
+    (signature: string) => {
+      console.log("Transaction completed with signature:", signature);
+      refetchBalance();
+      setIsSendSolDialogOpen(false);
+    },
+    [refetchBalance]
+  );
 
   if (isLoadingAccounts) {
     return <div>Loading accounts...</div>;
@@ -62,7 +74,7 @@ export const Dashboard = () => {
 
       <div className="flex-1 p-8">
         {selectedAccount ? (
-          <>
+          <div className="flex flex-col gap-4">
             <AccountDetails
               account={accounts.find(
                 (acc) => acc.publicKey === selectedAccount
@@ -74,17 +86,17 @@ export const Dashboard = () => {
             />
             <div className="flex space-x-4 mb-8">
               <Button onClick={handleAirDrop}>Request air drop</Button>
-              <Button>
+              <Button onClick={() => setIsSendSolDialogOpen(true)}>
                 <Send className="mr-2" /> Send
               </Button>
-              <Button>
+              <Button disabled>
                 <RefreshCw className="mr-2" /> Swap
               </Button>
-              <Button>
+              <Button disabled>
                 <DollarSign className="mr-2" /> Buy
               </Button>
             </div>
-          </>
+          </div>
         ) : (
           <p>Select an account to view details</p>
         )}
@@ -101,6 +113,16 @@ export const Dashboard = () => {
         onClose={() => setIsPrivateKeyDialogOpen(false)}
         publicKey={selectedAccount}
       />
+
+      {selectedAccount && (
+        <SendSolDialog
+          isOpen={isSendSolDialogOpen}
+          onClose={() => setIsSendSolDialogOpen(false)}
+          fromPublicKey={selectedAccount}
+          balance={balance}
+          onSendComplete={handleSendComplete}
+        />
+      )}
     </div>
   );
 };

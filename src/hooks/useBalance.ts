@@ -6,7 +6,7 @@ export const useBalance = (publicKey: string | null) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBalance = useCallback(async () => {
+  const refetchBalance = useCallback(async () => {
     if (!publicKey) return;
     setIsLoading(true);
     setError(null);
@@ -22,19 +22,25 @@ export const useBalance = (publicKey: string | null) => {
   }, [publicKey]);
 
   useEffect(() => {
-    fetchBalance();
-  }, [fetchBalance]);
+    refetchBalance();
+  }, [refetchBalance]);
 
   const requestAirdrop = async () => {
     if (!publicKey) return;
     try {
       await walletUtils.requestAirDrop(publicKey, 2);
-      await fetchBalance();
+      await refetchBalance();
     } catch (err) {
       console.error("Error requesting airdrop:", err);
       throw new Error("Failed to request airdrop. Please try again later.");
     }
   };
 
-  return { balance, isLoading, error, refetch: fetchBalance, requestAirdrop };
+  return {
+    balance,
+    isLoading,
+    error,
+    refetchBalance,
+    requestAirdrop,
+  };
 };

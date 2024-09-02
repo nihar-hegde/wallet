@@ -1,4 +1,11 @@
-import { Keypair, PublicKey } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  sendAndConfirmTransaction,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import { cryptoUtils } from "./encrypt-decrypt-utils";
 import { browserStorage } from "./storage-utils";
 import { derivePath } from "ed25519-hd-key";
@@ -34,17 +41,17 @@ export const walletUtils = {
 
       const recoveryPhrase = await cryptoUtils.decrypt(
         encryptedPhrase,
-        password,
+        password
       );
 
       const existingAccounts = JSON.parse(
-        (await browserStorage.get("accounts")) || "[]",
+        (await browserStorage.get("accounts")) || "[]"
       );
 
       const newAccount = await this.createAccount(
         recoveryPhrase,
         existingAccounts.length,
-        password,
+        password
       );
 
       existingAccounts.push(newAccount);
@@ -72,7 +79,7 @@ export const walletUtils = {
 
       const encryptedPrivateKey = await cryptoUtils.encrypt(
         base58PrivateKey,
-        password,
+        password
       );
 
       return {
@@ -104,7 +111,7 @@ export const walletUtils = {
     const encryptedPhrase = await browserStorage.get("encryptedPhrase");
     console.log(
       "Verifying password, encrypted phrase exists:",
-      !!encryptedPhrase,
+      !!encryptedPhrase
     );
 
     if (!encryptedPhrase) return false;
@@ -140,7 +147,7 @@ export const walletUtils = {
     const publicKey = new PublicKey(pubKey);
 
     console.log(
-      `Requesting Air Drop of  ${amount} SOL to Publick Key = ${publicKey}`,
+      `Requesting Air Drop of  ${amount} SOL to Publick Key = ${publicKey}`
     );
 
     const signature = await connection.requestAirdrop(publicKey, amount * 1e9);
@@ -148,9 +155,84 @@ export const walletUtils = {
     await connection.confirmTransaction(signature);
 
     console.log(
-      `Airdrop of ${amount} SOL sent to public key ${publicKey} successful`,
+      `Airdrop of ${amount} SOL sent to public key ${publicKey} successful`
     );
 
     return signature;
+  },
+
+  async sendSol(
+    fromPublicKey: string,
+    toPublicKey: string,
+    amount: number,
+    password: string
+  ): Promise<{ signature: string; status: string }> {
+    const connection: Connection = getSolanaConnection();
+    const fromPubkey = new PublicKey(fromPublicKey);
+    const toPubkey = new PublicKey(toPublicKey);
+
+    try {
+      const base58PrivateKey = await this.getPrivateKey(
+        fromPublicKey,
+        password
+      );
+      const privateKeyUint8 = bs58.decode(base58PrivateKey);
+
+      if (privateKeyUint8.length !== 64) {
+        throw new Error(
+          `Invalid private key byte length: ${privateKeyUint8.length}`
+        );
+      }
+
+      const signer = Keypair.fromSecretKey(privateKeyUint8);
+
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey,
+          toPubkey,
+          lamports: Math.round(amount * 1e9),
+        })
+      );
+
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = fromPubkey;
+
+      // Sign the transaction
+      transaction.sign(signer);
+
+      // Send the raw transaction
+      const rawTransaction = transaction.serialize();
+      const signature = await connection.sendRawTransaction(rawTransaction, {
+        skipPreflight: false,
+        preflightCommitment: "confirmed",
+      });
+
+      console.log("Transaction sent with signature:", signature);
+
+      // Check the initial status
+      const initialStatus = await this.checkTransactionStatus(signature);
+
+      return { signature, status: initialStatus };
+    } catch (error) {
+      console.error("Error in sendSol:", error);
+      throw error;
+    }
+  },
+
+  async checkTransactionStatus(signature: string): Promise<string> {
+    const connection: Connection = getSolanaConnection();
+    const status = await connection.getSignatureStatus(signature);
+
+    if (status.value?.err) {
+      return "failed";
+    } else if (
+      status.value?.confirmationStatus === "confirmed" ||
+      status.value?.confirmationStatus === "finalized"
+    ) {
+      return status.value.confirmationStatus;
+    } else {
+      return "processing";
+    }
   },
 };
