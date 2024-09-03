@@ -161,6 +161,7 @@ export const walletUtils = {
     return signature;
   },
 
+  // revisit this funciton try to implement sendAndConfimr method .
   async sendSol(
     fromPublicKey: string,
     toPublicKey: string,
@@ -198,10 +199,8 @@ export const walletUtils = {
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = fromPubkey;
 
-      // Sign the transaction
       transaction.sign(signer);
 
-      // Send the raw transaction
       const rawTransaction = transaction.serialize();
       const signature = await connection.sendRawTransaction(rawTransaction, {
         skipPreflight: false,
@@ -210,7 +209,6 @@ export const walletUtils = {
 
       console.log("Transaction sent with signature:", signature);
 
-      // Check the initial status
       const initialStatus = await this.checkTransactionStatus(signature);
 
       return { signature, status: initialStatus };
