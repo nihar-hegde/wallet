@@ -32,9 +32,13 @@ NEXT_PUBLIC_SOLANA_RPC_ENDPOINT=your-solana-rpc-endpoint-here
 To start the development server, run:
 
 ```
-
 bun dev
-
 ```
 
 Your application will be available at `http://localhost:3000`.
+
+
+
+## DEMO:
+
+https://github.com/user-attachments/assets/b59b65f0-0587-4492-b41b-49333ac8f5e3
