@@ -1,8 +1,10 @@
 "use client";
+import { buttonVariants } from "@/components/ui/button";
 import { HeroHighlight, Highlight } from "@/components/ui/hero-highlight";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function Home() {
@@ -34,6 +36,7 @@ export default function Home() {
           cryptocurrencies.
         </motion.h1>
         <motion.div
+          className="flex flex-row items-center gap-4"
           initial={{
             opacity: 0,
             y: 20,
