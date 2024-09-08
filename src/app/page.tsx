@@ -35,6 +35,29 @@ export default function Home() {
           Welcome to CryptoVault Your trusted companion in the world of
           cryptocurrencies.
         </motion.h1>
+        <motion.p
+          initial={{
+            opacity: 0,
+            y: 20,
+          }}
+          animate={{
+            opacity: 1,
+            y: [20, -5, 0],
+          }}
+          transition={{
+            duration: 0.5,
+            ease: [0.4, 0.0, 0.2, 1],
+          }}
+          className="text-sm font-bold text-neutral-500 max-w-4xl leading-relaxed lg:leading-snug text-center mx-auto "
+        >
+          <Link
+            href={
+              "https://github.com/nihar-hegde/wallet?tab=readme-ov-file#demo"
+            }
+          >
+            *Click here to watch a demo
+          </Link>
+        </motion.p>
         <motion.div
           className="flex flex-row items-center gap-4"
           initial={{
